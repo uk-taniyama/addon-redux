@@ -4,7 +4,6 @@ import * as events from './lib/events'
 import { mergeStateAction, setStateAction, WITH_REDUX_ENABLED } from './enhancer'
 
 let nextId = 0
-let initialized = false
 
 export default addons => ({Provider, store, state, actions}) => {
   const channel = addons.getChannel()
@@ -12,12 +11,10 @@ export default addons => ({Provider, store, state, actions}) => {
   if (!store) throw new Error('withRedux: store is required')
   if (!Provider) throw new Error('withRedux: Provider is required as of v1.0.0')
 
-  if (!initialized) {
-    channel.on(events.SET_STATE, state => store.dispatch(setStateAction(state)))
-    channel.on(events.DISPATCH, action => store.dispatch(action))
-  }
-
-  initialized = true
+  channel.removeAllEventListener(events.SET_STATE)
+  channel.removeAllEventListener(events.DISPATCH)
+  channel.on(events.SET_STATE, state => store.dispatch(setStateAction(state)))
+  channel.on(events.DISPATCH, action => store.dispatch(action))
 
   const onDispatchListener = (action, prev, next) => {
     const diff = differ(prev, next)
